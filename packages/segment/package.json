@@ -32,7 +32,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/kud/segment",
+    "url": "git+https://github.com/kud/segment.git",
     "directory": "packages/segment"
   },
   "engines": {
