@@ -1,6 +1,6 @@
 {
   "name": "@kud/segment-cli",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Fast, modern Segment CLI — inspect sources, manage destinations, and read the catalog.",
   "type": "module",
   "bin": {
