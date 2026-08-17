@@ -15,6 +15,9 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      # The build is dependency-ordered by hand, not `--workspaces`: npm runs
+      # workspaces alphabetically, so segment-cli would compile before the
+      # segment-ink it imports and fail with TS2307 on every cold checkout.
       # Build first: workspaces import each other through their published
       # entrypoints, so typecheck resolves `@kud/segment` via dist/*.d.ts. With
       # build last, every dependent package fails with "Cannot find module

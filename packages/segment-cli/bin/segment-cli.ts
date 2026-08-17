@@ -3,7 +3,9 @@ import { existsSync, readFileSync } from "node:fs"
 import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
 import chalk from "chalk"
-import { Command } from "commander"
+import { Command, Option } from "commander"
+
+import { SCREENS, parseArgv } from "../src/argv.js"
 import {
   HttpError,
   SegmentClient,
@@ -12,11 +14,7 @@ import {
   normalizeRegion,
   type Region,
 } from "@kud/segment"
-import type {
-  Destination,
-  DestinationMetadata,
-  Source,
-} from "@kud/segment"
+import type { Destination, DestinationMetadata, Source } from "@kud/segment"
 import {
   formatBool,
   formatKeyValueList,
@@ -250,6 +248,18 @@ program
   .option("--pretty", "force colour output")
   .option("--no-color", "disable colour output")
   .option("--timeout <ms>", "request timeout in milliseconds")
+  .option("--mock", "browse fixture data instead of the API (no token needed)")
+  // Registered so commander tolerates it beside a subcommand and so
+  // `--screen list` is discoverable in dev, but the flag is read from
+  // process.argv in src/argv.ts and therefore works whether or not it is
+  // listed here. Tooling drives it as a subprocess; a flag that only functions
+  // under an env var fails deep inside a run with nothing naming the cause.
+  .addOption(
+    new Option(
+      "--screen <name>",
+      `open the browser on a screen (${SCREENS.join(", ")}); "list" prints the names`,
+    ).hideHelp(!process.env["SEGMENT_DEV"]),
+  )
   .hook("preAction", (_thisCommand, actionCommand) => {
     configureColor(globalOptsOf(actionCommand))
   })
@@ -528,4 +538,21 @@ configCommand
     }),
   )
 
-await program.parseAsync()
+// Bare `segment` opens the browser, the way k9s, lazygit and btop do: once a
+// tool has a full interface, that interface is the tool and needs no verb.
+// Commander never sees the bare form, so the decision is made on process.argv
+// first — see src/argv.ts for why the flag values matter. The import is dynamic
+// so Ink and React are never loaded for `segment sources list`.
+const invocation = parseArgv(process.argv)
+
+if (invocation.kind === "screen-list") {
+  for (const screen of SCREENS) console.log(screen)
+} else if (invocation.kind === "error") {
+  console.error(chalk.red(`error: ${invocation.message}`))
+  process.exitCode = 1
+} else if (invocation.kind === "interactive") {
+  const { startBrowse } = await import("../src/browse.js")
+  await startBrowse({ screen: invocation.screen, mock: invocation.mock })
+} else {
+  await program.parseAsync()
+}
