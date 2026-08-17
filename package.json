@@ -1,0 +1,38 @@
+{
+  "name": "kud-segment-monorepo",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "The @kud/segment family — Segment Public API tooling: a surface-agnostic core and a thin CLI.",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "changeset": "changeset",
+    "version-packages": "changeset version",
+    "release": "npm run build && changeset publish"
+  },
+  "keywords": [
+    "segment",
+    "analytics",
+    "cli",
+    "destinations",
+    "monorepo"
+  ],
+  "author": "Erwann Mest <m@kud.io>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kud/segment"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "@changesets/cli": "2.31.0",
+    "typescript": "5.9.3"
+  }
+}

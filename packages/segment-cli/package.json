@@ -1,0 +1,52 @@
+{
+  "name": "@kud/segment-cli",
+  "version": "0.1.0",
+  "description": "Fast, modern Segment CLI — inspect sources, manage destinations, and read the catalog.",
+  "type": "module",
+  "bin": {
+    "segment": "dist/bin/segment-cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p .",
+    "dev": "tsx bin/segment-cli.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test 'test/**/*.test.ts'",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "segment",
+    "cli",
+    "analytics",
+    "destinations",
+    "sources",
+    "amplitude",
+    "terminal"
+  ],
+  "author": "Erwann Mest <m@kud.io>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kud/segment",
+    "directory": "packages/segment-cli"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@kud/segment": "0.1.0",
+    "chalk": "5.6.2",
+    "commander": "14.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "26.1.1",
+    "tsx": "4.20.5",
+    "typescript": "5.9.3"
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "name": "@kud/segment",
+  "version": "0.1.0",
+  "description": "Surface-agnostic Segment core — Public API client, config, and types (sources · destinations · catalog).",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p .",
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test 'test/**/*.test.ts'",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "segment",
+    "analytics",
+    "public-api",
+    "destinations",
+    "sources",
+    "core"
+  ],
+  "author": "Erwann Mest <m@kud.io>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kud/segment",
+    "directory": "packages/segment"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "@types/node": "26.1.1",
+    "tsx": "4.20.5",
+    "typescript": "5.9.3"
+  }
+}
