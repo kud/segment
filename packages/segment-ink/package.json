@@ -1,6 +1,6 @@
 {
   "name": "@kud/segment-ink",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Ink components for browsing Segment sources, destinations, and the destination catalog",
   "type": "module",
   "exports": {

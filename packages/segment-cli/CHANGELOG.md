@@ -1,5 +1,12 @@
 # @kud/segment-cli
 
+## 0.2.1
+
+### Patch Changes
+
+- Updated dependencies [7f657f6]
+  - @kud/segment-ink@0.1.1
+
 ## 0.2.0
 
 ### Minor Changes
