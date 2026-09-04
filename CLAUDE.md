@@ -1,0 +1,20 @@
+# @kud/segment — working notes
+
+An npm-workspaces monorepo, one direction of flow:
+
+```
+@kud/segment          surface-agnostic core — Public API client, config, types
+  ├ @kud/segment-ink  Ink components for sources, destinations, the catalog
+  └ @kud/segment-cli  the thin CLI over both
+```
+
+Nothing in the core knows about a terminal. Colour and glyph are the consuming
+surface's vocabulary.
+
+## Terminal UI
+
+The TUI in `packages/segment-ink` is built with [`@kud/ink-ui`](https://github.com/kud/ink-ui), the house Ink design system — pre-styled components, the `useTabs`/`useListCursor` keyboard hooks, and `colors`/`spacing` design tokens.
+
+**Before writing or changing any UI component, read `node_modules/@kud/ink-ui/AGENTS.md`.** It ships with the package and carries what the type definitions cannot express: which components own their own Ink `useInput` versus which are presentational, what to compose for a given screen, and the known traps. The exhaustive component surface is `node_modules/@kud/ink-ui/dist/index.d.ts`.
+
+Never hand-roll a component without checking there first — bordered panes, scrolling viewports, selectable rows, tables, tab bars, spinners, progress bars and key-hint footers are all provided. Colour comes from the `colors` token object, never a string literal.

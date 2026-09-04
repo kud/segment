@@ -44,7 +44,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@kud/ink-ui": "0.14.0",
+    "@kud/ink-ui": "0.21.0",
     "@kud/segment": "0.1.1"
   },
   "peerDependencies": {
