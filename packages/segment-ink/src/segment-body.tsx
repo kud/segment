@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { Box, Text, useInput, useStdout } from "ink"
+import { Box, Text, useInput } from "ink"
 import {
   FooterHints,
   KeyValue,
@@ -16,7 +16,8 @@ import type {
   SegmentClient,
   Source,
 } from "@kud/segment"
-import { listRows } from "./lib/rows.js"
+import { detailRows, listRows } from "./lib/rows.js"
+import { useTerminalSize } from "./lib/use-terminal-size.js"
 import type { SegmentLike } from "./lib/segment-like.js"
 import { enabledBadge } from "./lib/enabled.js"
 import { SourceList } from "./components/source-list.js"
@@ -111,6 +112,14 @@ const FALLBACK_ROWS = 24
 // A panel's border, the margin above it, and its heading.
 const DETAIL_CHROME_ROWS = 4
 const DETAIL_MAX_ROWS = 10
+// Lines each panel draws besides its entries, the "… N more" line included:
+// the destination panel's Id, Integration, Enabled and Settings rows, and the
+// catalog table's header row.
+const DESTINATION_FIXED_ROWS = 5
+const CATALOG_FIXED_ROWS = 2
+// The outer padding, a panel's border and its padding, on both sides. A table
+// sized against the whole terminal instead runs straight through the border.
+const DETAIL_INSET_COLUMNS = 6
 
 const clock = (at: Date): string => at.toTimeString().slice(0, 8)
 
@@ -127,7 +136,7 @@ export const SegmentBody = ({
   screen,
   sourceId: initialSourceId,
 }: SegmentBodyProps) => {
-  const { stdout } = useStdout()
+  const terminal = useTerminalSize()
   const api = client as SegmentLike
 
   const [view, setView] = useState<View>(
@@ -313,18 +322,36 @@ export const SegmentBody = ({
 
   const selectedDestination = (): Destination | undefined => destinations[cursor]
 
-  const detailBodyRows =
+  const destinationSettings = Object.entries(
+    selectedDestination()?.settings ?? {},
+  )
+  const detailFixedRows =
     detail === "catalog"
-      ? Math.min(catalogDetail?.options.length ?? 0, DETAIL_MAX_ROWS) + 2
+      ? CATALOG_FIXED_ROWS
       : detail === "destination"
-        ? Math.min(
-            Object.keys(selectedDestination()?.settings ?? {}).length,
-            DETAIL_MAX_ROWS,
-          ) + 5
+        ? DESTINATION_FIXED_ROWS
         : 0
+  const detailEntries = detailRows({
+    terminalRows: terminal.rows,
+    chromeRows: CHROME_ROWS,
+    panelChromeRows: DETAIL_CHROME_ROWS,
+    fixedRows: detailFixedRows,
+    entries:
+      detail === "catalog"
+        ? (catalogDetail?.options.length ?? 0)
+        : destinationSettings.length,
+    maxEntries: DETAIL_MAX_ROWS,
+    fallbackRows: FALLBACK_ROWS,
+  })
+  const hiddenSettings = destinationSettings.length - detailEntries
 
-  const overlayRows = detail ? DETAIL_CHROME_ROWS + detailBodyRows : 0
-  const rows = listRows(stdout?.rows, CHROME_ROWS, overlayRows, FALLBACK_ROWS)
+  const overlayRows = detail
+    ? DETAIL_CHROME_ROWS + detailFixedRows + detailEntries
+    : 0
+  const rows = listRows(terminal.rows, CHROME_ROWS, overlayRows, FALLBACK_ROWS)
+  const detailWidth = terminal.columns
+    ? Math.max(1, terminal.columns - DETAIL_INSET_COLUMNS)
+    : undefined
 
   const subtitle =
     view === "sources"
@@ -398,16 +425,21 @@ export const SegmentBody = ({
             value={enabledBadge(selectedDestination()?.enabled ?? false).text}
           />
           <Text color={colors.muted}>Settings</Text>
-          {Object.entries(selectedDestination()?.settings ?? {})
-            .slice(0, DETAIL_MAX_ROWS)
-            .map(([name, value]) => (
-              <KeyValue
-                key={name}
-                label={name}
-                value={describeValue(value)}
-                labelWidth={24}
-              />
-            ))}
+          {destinationSettings.slice(0, detailEntries).map(([name, value]) => (
+            <KeyValue
+              key={name}
+              label={name}
+              value={
+                // Truncated, not wrapped: a long JSON value that wraps takes
+                // rows the budget above never gave it.
+                <Text wrap="truncate-end">{describeValue(value)}</Text>
+              }
+              labelWidth={24}
+            />
+          ))}
+          {hiddenSettings > 0 && (
+            <Text color={colors.muted}>{`… ${hiddenSettings} more settings`}</Text>
+          )}
         </Box>
       )}
 
@@ -424,7 +456,8 @@ export const SegmentBody = ({
           </Text>
           <OptionTable
             options={catalogDetail?.options ?? []}
-            rows={DETAIL_MAX_ROWS}
+            rows={detailEntries}
+            maxWidth={detailWidth}
           />
         </Box>
       )}

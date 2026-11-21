@@ -1,5 +1,7 @@
+import { EventEmitter } from "node:events"
 import { describe, it, expect, vi } from "vitest"
 import { render } from "ink-testing-library"
+import { render as inkRender } from "ink"
 import { SegmentBody } from "./segment-body.js"
 import { FIXTURE_AMPLITUDE_API_KEY, createMockClient } from "./mock-client.js"
 import type { SegmentLike } from "./lib/segment-like.js"
@@ -174,5 +176,129 @@ describe("the mock client", () => {
   it("returns the same data twice, so a screenshot is reproducible", async () => {
     const client = createMockClient()
     expect(await client.listSources()).toEqual(await client.listSources())
+  })
+})
+
+// ink-testing-library reports no height and a fixed 100 columns, which is the
+// one size where none of the layout budgeting is exercised. This stands in for
+// a terminal of a given size, resizable the way a real one is.
+class SizedStdout extends EventEmitter {
+  isTTY = true
+  frame = ""
+  constructor(
+    public columns: number,
+    public rows: number,
+  ) {
+    super()
+  }
+  write = (frame: string) => {
+    this.frame = frame
+    return true
+  }
+  resize(columns: number, rows: number) {
+    this.columns = columns
+    this.rows = rows
+    this.emit("resize")
+  }
+}
+
+class KeyStdin extends EventEmitter {
+  isTTY = true
+  private data: string | null = null
+  write = (data: string) => {
+    this.data = data
+    this.emit("readable")
+    this.emit("data", data)
+  }
+  read = () => {
+    const { data } = this
+    this.data = null
+    return data
+  }
+  setEncoding() {}
+  setRawMode() {}
+  resume() {}
+  pause() {}
+  ref() {}
+  unref() {}
+}
+
+const ANSI = new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*m`, "g")
+
+const mountSized = (
+  columns: number,
+  rows: number,
+  props: Partial<Parameters<typeof SegmentBody>[0]> = {},
+) => {
+  const stdout = new SizedStdout(columns, rows)
+  const stdin = new KeyStdin()
+  const app = inkRender(
+    <SegmentBody onExit={() => {}} client={createMockClient()} {...props} />,
+    {
+      stdout: stdout as unknown as NodeJS.WriteStream,
+      stdin: stdin as unknown as NodeJS.ReadStream,
+      debug: true,
+      exitOnCtrlC: false,
+      patchConsole: false,
+    },
+  )
+  const lines = () => stdout.frame.replace(ANSI, "").split("\n")
+  return { app, stdout, stdin, lines }
+}
+
+const widest = (lines: string[]) =>
+  Math.max(...lines.map((line) => [...line].length))
+
+describe("layout at a real terminal size", () => {
+  it("keeps the footer on screen with a destination open on a short terminal", async () => {
+    const { app, stdin, lines } = mountSized(80, 16, {
+      sourceId: "src_01website",
+    })
+    await settled()
+    stdin.write("\r")
+    await settled()
+    expect(lines().length).toBeLessThanOrEqual(16)
+    expect(lines().at(-1)).toContain("close")
+    expect(lines().join("\n")).toContain("more settings")
+    app.unmount()
+  })
+
+  it("keeps the footer on screen with a catalog entry open on a short terminal", async () => {
+    const { app, stdin, lines } = mountSized(80, 16, { screen: "catalog" })
+    await settled()
+    stdin.write("\r")
+    await settled()
+    expect(lines().length).toBeLessThanOrEqual(16)
+    expect(lines().at(-1)).toContain("close")
+    app.unmount()
+  })
+
+  // Four fixed columns came to 92 cells and ran straight through the panel's
+  // right border on an 80-column terminal.
+  it("fits the catalog settings table inside its panel at 80 columns", async () => {
+    const { app, stdin, lines } = mountSized(80, 30, { screen: "catalog" })
+    await settled()
+    stdin.write("\r")
+    await settled()
+    expect(lines().join("\n")).toContain("Residency Server")
+    expect(widest(lines())).toBeLessThanOrEqual(80)
+    app.unmount()
+  })
+
+  // Shrinking the window while the screen sits idle used to keep the old row
+  // budget until the next keypress, so the footer was the first thing lost.
+  it("re-budgets on resize without waiting for a keypress", async () => {
+    const { app, stdout, stdin, lines } = mountSized(80, 40, {
+      sourceId: "src_01website",
+    })
+    await settled()
+    stdin.write("\r")
+    await settled()
+    expect(lines().join("\n")).toContain("residencyServer")
+    stdout.resize(80, 16)
+    await settled()
+    expect(lines().length).toBeLessThanOrEqual(16)
+    expect(lines().at(-1)).toContain("close")
+    app.unmount()
   })
 })
