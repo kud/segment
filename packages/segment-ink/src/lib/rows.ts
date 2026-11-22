@@ -12,3 +12,34 @@ export const listRows = (
   fallbackRows = 24,
 ): number =>
   Math.max(1, (terminalRows || fallbackRows) - chromeRows - overlayRows)
+
+// How many entries a detail panel may draw, given everything else the screen
+// has to keep. The panel used to size itself from its content alone, capped at
+// a constant, and the list was the only thing that gave way — so on a short
+// terminal the list collapsed to its one-row floor and the panel still pushed
+// the footer off the bottom. The panel has to yield too: the list keeps its
+// selected row (the panel is about that row), the panel keeps its frame and
+// fixed lines, and the entries get what is left, down to none.
+export const detailRows = ({
+  terminalRows,
+  chromeRows,
+  panelChromeRows,
+  fixedRows,
+  entries,
+  maxEntries,
+  fallbackRows = 24,
+}: {
+  terminalRows: number | undefined
+  chromeRows: number
+  /** The panel's border, the margin above it and its heading. */
+  panelChromeRows: number
+  /** Lines the panel always draws besides its entries. */
+  fixedRows: number
+  entries: number
+  maxEntries: number
+  fallbackRows?: number
+}): number => {
+  const spare =
+    (terminalRows || fallbackRows) - chromeRows - 1 - panelChromeRows - fixedRows
+  return Math.max(0, Math.min(entries, maxEntries, spare))
+}
