@@ -1,5 +1,14 @@
 # @kud/segment-cli
 
+## 0.2.2
+
+### Patch Changes
+
+- f5ad8ad: Upgrade to Ink 8 and React 19.3. `@kud/segment-ink` keeps accepting Ink 7 or 8 as a peer; the CLI now ships on Ink 8.
+- Updated dependencies [e051d36]
+- Updated dependencies [f5ad8ad]
+  - @kud/segment-ink@0.1.2
+
 ## 0.2.1
 
 ### Patch Changes
