@@ -6,10 +6,16 @@ export type TerminalSize = {
   columns: number | undefined
 }
 
-const read = (stdout: { rows?: number; columns?: number } | undefined) => ({
-  rows: stdout?.rows,
-  columns: stdout?.columns,
-})
+// Ink 8 types `useStdout().stdout` as a plain `NodeJS.WritableStream`, so the
+// TTY-only `rows`/`columns` are no longer in its type. They are still there at
+// runtime on a real terminal, and absent on a pipe, which is the case the
+// budgeting fallbacks already cover.
+type MaybeTty = { rows?: number; columns?: number }
+
+const read = (stdout: NodeJS.WritableStream | undefined) => {
+  const tty = stdout as MaybeTty | undefined
+  return { rows: tty?.rows, columns: tty?.columns }
+}
 
 // The terminal size, re-read on every resize. Reading `stdout.rows` during
 // render only picks up a new size when something else happens to re-render:
