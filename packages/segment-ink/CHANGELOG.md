@@ -1,5 +1,12 @@
 # @kud/segment-ink
 
+## 0.1.2
+
+### Patch Changes
+
+- e051d36: Keep the footer on screen on short and narrow terminals. The detail panels now give up settings rows before the footer is pushed off the bottom, re-budget when the window is resized rather than on the next keypress, and the catalog settings table fits inside its panel at 80 columns instead of running through the border.
+- f5ad8ad: Upgrade to Ink 8 and React 19.3. `@kud/segment-ink` keeps accepting Ink 7 or 8 as a peer; the CLI now ships on Ink 8.
+
 ## 0.1.1
 
 ### Patch Changes
